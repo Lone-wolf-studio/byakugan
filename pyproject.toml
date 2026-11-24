@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "byakugan"
+version = "0.1.0"
+description = "A static, cross-language project inventory"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+byakugan = "byakugan.cli:main"
+
+[tool.setuptools]
+packages = ["byakugan"]
