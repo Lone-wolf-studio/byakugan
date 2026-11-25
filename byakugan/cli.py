@@ -29,6 +29,32 @@ def render_text(report: dict) -> str:
         f"Languages: {languages}",
         f"Frameworks: {frameworks}",
     ]
+    models = [
+        (file["path"], model)
+        for file in report["files"]
+        for model in file.get("models", [])
+    ]
+    routes = [
+        (file["path"], route)
+        for file in report["files"]
+        for route in file.get("routes", [])
+    ]
+    lines.extend(["", f"Models ({len(models)}):"])
+    for file_path, model in models[:30]:
+        lines.append(f"  {model['name']}  {file_path}:{model['line']}")
+        for field in model["fields"]:
+            lines.append(f"    {field['name']}: {field['type']}")
+        for relationship in model["relationships"]:
+            lines.append(f"    {relationship['field']} → {relationship['target']}")
+    if len(models) > 30:
+        lines.append(f"  … {len(models) - 30} more in JSON output")
+    lines.extend(["", f"Routes ({len(routes)}):"])
+    for file_path, route in routes[:30]:
+        lines.append(
+            f"  {route['method']} {route['path']} → {route['handler']}  {file_path}:{route['line']}"
+        )
+    if len(routes) > 30:
+        lines.append(f"  … {len(routes) - 30} more in JSON output")
     if report["warnings"]:
         lines.extend(["", f"Warnings ({len(report['warnings'])}):"])
         lines.extend(f"  {warning}" for warning in report["warnings"])
