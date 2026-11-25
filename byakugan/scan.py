@@ -7,6 +7,8 @@ import os
 import re
 from pathlib import Path
 
+from .django import analyze_django
+
 
 _LANGUAGES = {
     ".py": "Python",
@@ -80,7 +82,12 @@ def _read_small(root: Path, file: Path, warnings: list[str]) -> bytes | None:
     return content
 
 
-def _frameworks(root: Path, paths: list[Path], warnings: list[str]) -> list[dict[str, object]]:
+def _frameworks(
+    root: Path,
+    paths: list[Path],
+    warnings: list[str],
+    files: list[dict[str, object]],
+) -> list[dict[str, object]]:
     found: dict[str, set[str]] = {}
 
     def add(name: str, evidence: str) -> None:
@@ -133,6 +140,11 @@ def _frameworks(root: Path, paths: list[Path], warnings: list[str]) -> list[dict
     basenames = {file.name for file in paths}
     if "manage.py" in basenames and "settings.py" in basenames:
         add("Django", "manage.py + settings.py")
+    for file in files:
+        if file.get("models"):
+            add("Django", f"{file['path']}: model declarations")
+        if file.get("routes"):
+            add("Django", f"{file['path']}: URL patterns")
     return [
         {"name": name, "evidence": sorted(evidence)}
         for name, evidence in sorted(found.items())
@@ -159,13 +171,27 @@ def scan_project(directory: str | Path) -> dict[str, object]:
             f"Source file limit reached: scanning first {_MAX_SOURCE_FILES} of {len(sources)}"
         )
 
-    files: list[dict[str, str]] = []
+    files: list[dict[str, object]] = []
     counts: dict[str, int] = {}
+    model_count = 0
+    route_count = 0
     for file in sources[:_MAX_SOURCE_FILES]:
-        if _read_small(root, file, warnings) is None:
+        source = _read_small(root, file, warnings)
+        if source is None:
             continue
         language = _LANGUAGES[file.suffix.lower()]
-        files.append({"path": _relative(root, file), "language": language})
+        relative = _relative(root, file)
+        entry: dict[str, object] = {"path": relative, "language": language}
+        if language == "Python":
+            findings = analyze_django(relative, source)
+            warnings.extend(findings["warnings"])
+            if findings["models"]:
+                entry["models"] = findings["models"]
+                model_count += len(findings["models"])
+            if findings["routes"]:
+                entry["routes"] = findings["routes"]
+                route_count += len(findings["routes"])
+        files.append(entry)
         counts[language] = counts.get(language, 0) + 1
 
     return {
@@ -174,7 +200,9 @@ def scan_project(directory: str | Path) -> dict[str, object]:
         "summary": {
             "sourceFiles": len(files),
             "languages": dict(sorted(counts.items())),
-            "frameworks": _frameworks(root, paths, warnings),
+            "frameworks": _frameworks(root, paths, warnings, files),
+            "models": model_count,
+            "routes": route_count,
         },
         "files": files,
         "warnings": sorted(set(warnings)),
