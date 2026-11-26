@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 
 from .django import analyze_django
+from .django_views import link_django_views
 
 
 _LANGUAGES = {
@@ -80,6 +82,28 @@ def _read_small(root: Path, file: Path, warnings: list[str]) -> bytes | None:
         warnings.append(f"Skipped {relative}: binary content")
         return None
     return content
+
+
+class _LazyPythonSources(Mapping[str, bytes]):
+    """Expose scanned Python files without keeping their contents in memory."""
+
+    def __init__(self, root: Path, paths: dict[str, Path], warnings: list[str]) -> None:
+        self._root = root
+        self._paths = paths
+        self._warnings = warnings
+
+    def __getitem__(self, relative: str) -> bytes:
+        file = self._paths[relative]
+        source = _read_small(self._root, file, self._warnings)
+        if source is None:
+            raise KeyError(relative)
+        return source
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._paths)
+
+    def __len__(self) -> int:
+        return len(self._paths)
 
 
 def _frameworks(
@@ -172,6 +196,7 @@ def scan_project(directory: str | Path) -> dict[str, object]:
         )
 
     files: list[dict[str, object]] = []
+    python_paths: dict[str, Path] = {}
     counts: dict[str, int] = {}
     model_count = 0
     route_count = 0
@@ -183,6 +208,7 @@ def scan_project(directory: str | Path) -> dict[str, object]:
         relative = _relative(root, file)
         entry: dict[str, object] = {"path": relative, "language": language}
         if language == "Python":
+            python_paths[relative] = file
             findings = analyze_django(relative, source)
             warnings.extend(findings["warnings"])
             if findings["models"]:
@@ -194,6 +220,7 @@ def scan_project(directory: str | Path) -> dict[str, object]:
         files.append(entry)
         counts[language] = counts.get(language, 0) + 1
 
+    resolved_views = link_django_views(files, _LazyPythonSources(root, python_paths, warnings))
     return {
         "schemaVersion": 1,
         "project": {"name": root.name},
@@ -203,6 +230,7 @@ def scan_project(directory: str | Path) -> dict[str, object]:
             "frameworks": _frameworks(root, paths, warnings, files),
             "models": model_count,
             "routes": route_count,
+            "resolvedViews": resolved_views,
         },
         "files": files,
         "warnings": sorted(set(warnings)),
