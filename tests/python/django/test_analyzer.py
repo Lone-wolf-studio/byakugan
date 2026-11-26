@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from byakugan.cli import render_text
-from byakugan.django import analyze_django
+from byakugan.python.django import analyze_django
 from byakugan.scan import scan_project
 
 

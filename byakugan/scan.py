@@ -8,8 +8,8 @@ import re
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 
-from .django import analyze_django
-from .django_views import link_django_views
+from .python.django import analyze_django
+from .python.django.views import link_django_views
 
 
 _LANGUAGES = {

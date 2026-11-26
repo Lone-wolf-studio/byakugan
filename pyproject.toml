@@ -13,5 +13,6 @@ dependencies = []
 [project.scripts]
 byakugan = "byakugan.cli:main"
 
-[tool.setuptools]
-packages = ["byakugan"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["byakugan*"]
