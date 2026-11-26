@@ -1,5 +1,8 @@
-# Byakugan
-<img width="1920" height="1080" alt="neji_byakugan" src="https://github.com/user-attachments/assets/107da7e5-0a67-4899-b274-61a0c75c52d8" />
+<h1 align="center">Byakugan</h1>
+<p align="center">
+<img width="160" height="160" alt="image" src="https://github.com/user-attachments/assets/48263c52-2ac1-4832-a6cd-46aa661a37d5" />
+</p>
+
 
 Byakugan(name heavily inspired by Neji from Naruto) is a Python command-line tool for understanding the shape of a codebase. The first layer inventories source files, languages, and frameworks across Python, Java, JavaScript/TypeScript, and Go projects. It works on mixed repositories and monorepos without running the target code.
 
