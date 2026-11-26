@@ -28,6 +28,7 @@ def render_text(report: dict) -> str:
         f"Source files: {summary['sourceFiles']}",
         f"Languages: {languages}",
         f"Frameworks: {frameworks}",
+        f"Resolved views: {summary.get('resolvedViews', 0)}",
     ]
     models = [
         (file["path"], model)
@@ -50,8 +51,10 @@ def render_text(report: dict) -> str:
         lines.append(f"  … {len(models) - 30} more in JSON output")
     lines.extend(["", f"Routes ({len(routes)}):"])
     for file_path, route in routes[:30]:
+        view = route.get("view")
+        view_location = f" [{view['path']}:{view['line']}]" if view else ""
         lines.append(
-            f"  {route['method']} {route['path']} → {route['handler']}  {file_path}:{route['line']}"
+            f"  {route['method']} {route['path']} → {route['handler']}{view_location}  {file_path}:{route['line']}"
         )
     if len(routes) > 30:
         lines.append(f"  … {len(routes) - 30} more in JSON output")
