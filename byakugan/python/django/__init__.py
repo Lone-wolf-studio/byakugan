@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import ast
 
-from .models import extract_models
-from .urls import extract_routes
+from .models_crawler import extract_models
+from .urls_crawler import extract_routes
 
 
 def analyze_django(relative_path: str, source: bytes) -> dict:

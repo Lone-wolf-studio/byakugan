@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from byakugan.cli import render_text
-from byakugan.python.django.views import link_django_views
+from byakugan.python.django.views_crawler import link_django_views
 from byakugan.scan import scan_project
 
 
